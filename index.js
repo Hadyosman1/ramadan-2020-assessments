@@ -142,6 +142,12 @@ async function getVideoRequests() {
 
 function getSingleVideoRequestElm(vidReqInfo) {
   const vidReqWrapperElm = document.createElement("div");
+  const userVote = vidReqInfo.votes.ups.includes(loggedInUserId)
+    ? "up"
+    : vidReqInfo.votes.downs.includes(loggedInUserId)
+    ? "down"
+    : "";
+
   vidReqWrapperElm.innerHTML = `
       <div class="card mb-3">
           <div class="card-body d-flex justify-content-between flex-row">
@@ -158,13 +164,17 @@ function getSingleVideoRequestElm(vidReqInfo) {
             <div class="d-flex flex-column text-center">
               <button onclick="voteUp(this)" data-id="${
                 vidReqInfo._id
-              }" class="btn btn-link">🔺</button>
+              }" class="btn vote-up btn-link"
+               style="opacity:${userVote === "down" ? "0.5" : "1"}"
+              >🔺</button>
               <h3 data-id="${vidReqInfo._id}">
-                ${vidReqInfo.votes.ups - vidReqInfo.votes.downs}
+                ${vidReqInfo.votes.ups.length - vidReqInfo.votes.downs.length}
               </h3>
               <button onclick="voteDown(this)" data-id="${
                 vidReqInfo._id
-              }"  class="btn btn-link">🔻</button>
+              }"  class="btn vote-down btn-link"
+               style="opacity:${userVote === "up" ? "0.5" : "1"}"
+              >🔻</button>
             </div>
           </div>
           <div class="card-footer d-flex flex-row justify-content-between">
@@ -211,10 +221,16 @@ async function sendVoteRequest(vidReqId, vote_type) {
       headers: {
         "content-type": "application/json",
       },
-      body: JSON.stringify({ id: vidReqId, vote_type }),
+      body: JSON.stringify({
+        id: vidReqId,
+        vote_type,
+        user_id: loggedInUserId,
+      }),
     });
 
     const updatedVotes = await res.json();
+
+    // console.log(updatedVotes);
 
     return updatedVotes;
   } catch (error) {
@@ -227,12 +243,34 @@ async function voteUp(el) {
   const id = el.dataset.id;
   const countContainerElm = document.querySelector(`h3[data-id="${id}"]`);
   const updatedVotes = await sendVoteRequest(id, "ups");
-  countContainerElm.innerHTML = updatedVotes.ups - updatedVotes.downs;
+
+  const voteDownBtn = el.parentElement.querySelector(".vote-down");
+
+  if (updatedVotes.ups.includes(loggedInUserId)) {
+    el.style.opacity = "1";
+    voteDownBtn.style.opacity = "0.5";
+  } else {
+    voteDownBtn.style.opacity = "1";
+  }
+
+  countContainerElm.innerHTML =
+    updatedVotes.ups.length - updatedVotes.downs.length;
 }
 
 async function voteDown(el) {
   const id = el.dataset.id;
   const countContainerElm = document.querySelector(`h3[data-id="${id}"]`);
   const updatedVotes = await sendVoteRequest(id, "downs");
-  countContainerElm.innerHTML = updatedVotes.ups - updatedVotes.downs;
+
+  const voteUpBtn = el.parentElement.querySelector(".vote-up");
+
+  if (updatedVotes.downs.includes(loggedInUserId)) {
+    el.style.opacity = "1";
+    voteUpBtn.style.opacity = "0.5";
+  } else {
+    voteUpBtn.style.opacity = "1";
+  }
+
+  countContainerElm.innerHTML =
+    updatedVotes.ups.length - updatedVotes.downs.length;
 }

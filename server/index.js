@@ -7,6 +7,7 @@ const UserData = require("./data/user.data");
 const cors = require("cors");
 const mongoose = require("./models/mongo.config");
 const multer = require("multer");
+const userData = require("./data/user.data");
 
 const upload = multer();
 
@@ -62,8 +63,14 @@ app.post("/users/login", async (req, res, next) => {
 app.use(express.json());
 
 app.put("/video-request/vote", async (req, res, next) => {
-  const { id, vote_type } = req.body;
-  const response = await VideoRequestData.updateVoteForRequest(id, vote_type);
+  const { id, vote_type, user_id } = req.body;
+
+  const response = await VideoRequestData.updateVoteForRequest(
+    id,
+    vote_type,
+    user_id
+  );
+
   res.send(response.votes);
   next();
 });
