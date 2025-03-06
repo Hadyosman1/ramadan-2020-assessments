@@ -68,14 +68,23 @@ function getSingleVideoRequestElm(vidReqInfo) {
             <div class="d-flex flex-column">
               <h3>${vidReqInfo.topic_title}</h3>
               <p class="text-muted mb-2">${vidReqInfo.topic_details}</p>
-              <p class="mb-0 text-muted">
+              ${
+                vidReqInfo.expected_result &&
+                `<p class="mb-0 text-muted">
                 <strong>Expected results:</strong> ${vidReqInfo.expected_result}
-              </p>
+              </p>`
+              }
             </div>
             <div class="d-flex flex-column text-center">
-              <a class="btn btn-link">🔺</a>
-              <h3>${vidReqInfo.votes.ups - vidReqInfo.votes.downs}</h3>
-              <a class="btn btn-link">🔻</a>
+              <button onclick="voteUp(this)" data-id="${
+                vidReqInfo._id
+              }" class="btn btn-link">🔺</button>
+              <h3 data-id="${vidReqInfo._id}">
+                ${vidReqInfo.votes.ups - vidReqInfo.votes.downs}
+              </h3>
+              <button onclick="voteDown(this)" data-id="${
+                vidReqInfo._id
+              }"  class="btn btn-link">🔻</button>
             </div>
           </div>
           <div class="card-footer d-flex flex-row justify-content-between">
@@ -114,3 +123,36 @@ async function showVideoRequests() {
 }
 
 showVideoRequests();
+
+async function sendVoteRequest(vidReqId, vote_type) {
+  try {
+    const res = await fetch(`${BASE_API_URL}/video-request/vote`, {
+      method: "PUT",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({ id: vidReqId, vote_type }),
+    });
+
+    const updatedVotes = await res.json();
+
+    return updatedVotes;
+  } catch (error) {
+    console.error(error);
+    alert("Failed to update vote");
+  }
+}
+
+async function voteUp(el) {
+  const id = el.dataset.id;
+  const countContainerElm = document.querySelector(`h3[data-id="${id}"]`);
+  const updatedVotes = await sendVoteRequest(id, "ups");
+  countContainerElm.innerHTML = updatedVotes.ups - updatedVotes.downs;
+}
+
+async function voteDown(el) {
+  const id = el.dataset.id;
+  const countContainerElm = document.querySelector(`h3[data-id="${id}"]`);
+  const updatedVotes = await sendVoteRequest(id, "downs");
+  countContainerElm.innerHTML = updatedVotes.ups - updatedVotes.downs;
+}
