@@ -5,8 +5,18 @@ const videoRequestFormSubmitButton = videoRequestForm.querySelector(
   `button[type="submit"]`
 );
 const listOfRequestsContainer = document.getElementById("listOfRequests");
+const sortButtons = document.querySelectorAll(".sort-btn");
 
 const loadingSpinner = `<div class="spinner-border spinner-border-sm" role="status"></div>`;
+
+sortButtons.forEach((btn) => {
+  btn.addEventListener("click", (e) => {
+    sortButtons.forEach((btn) => btn.classList.remove("active"));
+    e.currentTarget.classList.add("active");
+    listOfRequestsContainer.innerHTML = "";
+    showVideoRequests(e.currentTarget.dataset.sort);
+  });
+});
 
 function toggleLoadingSpinner(element) {
   const existingLoadingSpinner = element.querySelector(".spinner-border");
@@ -47,9 +57,9 @@ videoRequestForm.addEventListener("submit", async (e) => {
   }
 });
 
-async function getVideoRequests() {
+async function getVideoRequests(sort = "new") {
   try {
-    const res = await fetch(`${BASE_API_URL}/video-request`);
+    const res = await fetch(`${BASE_API_URL}/video-request?sort=${sort}`);
 
     const reqs = await res.json();
     console.log(reqs);
@@ -107,7 +117,7 @@ function getSingleVideoRequestElm(vidReqInfo) {
   return vidReqWrapperElm;
 }
 
-function displayVideoRequests(reqs) {
+function renderVideoRequests(reqs) {
   let fragment = document.createDocumentFragment();
 
   reqs.forEach((vidReq) => {
@@ -117,9 +127,9 @@ function displayVideoRequests(reqs) {
   listOfRequestsContainer.appendChild(fragment);
 }
 
-async function showVideoRequests() {
-  const reqs = await getVideoRequests();
-  displayVideoRequests(reqs);
+async function showVideoRequests(sort) {
+  const reqs = await getVideoRequests(sort);
+  renderVideoRequests(reqs);
 }
 
 showVideoRequests();

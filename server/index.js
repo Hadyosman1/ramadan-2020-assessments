@@ -27,7 +27,17 @@ app.post("/video-request", upload.none(), async (req, res, next) => {
 });
 
 app.get("/video-request", async (req, res, next) => {
+  const { sort = "new" } = req.query;
+  console.log("sort: ", sort);
+
   const data = await VideoRequestData.getAllVideoRequests();
+
+  if (sort === "top_voted") {
+    data.sort((a, b) => {
+      return b.votes.ups - b.votes.downs - (a.votes.ups - a.votes.downs);
+    });
+  }
+
   res.send(data);
   next();
 });
