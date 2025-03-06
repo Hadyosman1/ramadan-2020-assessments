@@ -100,7 +100,7 @@
       </div>
       <hr />
       <h1 class="mb-4">List of requested videos</h1>
-      <div class="d-flex mb-3 justify-content-between">
+      <div class="d-flex mb-3 justify-content-between align-items-center">
         <div class="btn-group btn-group-sm" role="group">
           <button
             data-sort="new"
@@ -116,6 +116,14 @@
           >
             Top voted
           </button>
+        </div>
+        <div class="col col-sm-5 col-md-3">
+          <input
+            type="search"
+            class="form-control form-control-sm"
+            id="search-input"
+            placeholder="Search..."
+          />
         </div>
       </div>
       <div id="listOfRequests"></div>

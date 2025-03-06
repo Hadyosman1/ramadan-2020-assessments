@@ -6,15 +6,39 @@ const videoRequestFormSubmitButton = videoRequestForm.querySelector(
 );
 const listOfRequestsContainer = document.getElementById("listOfRequests");
 const sortButtons = document.querySelectorAll(".sort-btn");
+const searchInput = document.getElementById("search-input");
+let sortBy = "new";
+let query = "";
 
 const loadingSpinner = `<div class="spinner-border spinner-border-sm" role="status"></div>`;
 
+const debounce = (fn, delay) => {
+  let timeOut;
+
+  return (...args) => {
+    clearTimeout(timeOut);
+    timeOut = setTimeout(() => fn(...args), delay);
+  };
+};
+
+searchInput.addEventListener(
+  "input",
+  debounce(async (e) => {
+    const searchVal = e.target.value;
+    query = searchVal;
+    listOfRequestsContainer.innerHTML = "";
+    await showVideoRequests();
+  }, 500)
+);
+
 sortButtons.forEach((btn) => {
-  btn.addEventListener("click", (e) => {
+  btn.addEventListener("click", async (e) => {
     sortButtons.forEach((btn) => btn.classList.remove("active"));
     e.currentTarget.classList.add("active");
     listOfRequestsContainer.innerHTML = "";
-    showVideoRequests(e.currentTarget.dataset.sort);
+    const sortVal = e.currentTarget.dataset.sort;
+    sortBy = sortVal;
+    await showVideoRequests();
   });
 });
 
@@ -57,12 +81,18 @@ videoRequestForm.addEventListener("submit", async (e) => {
   }
 });
 
-async function getVideoRequests(sort = "new") {
+async function getVideoRequests() {
   try {
-    const res = await fetch(`${BASE_API_URL}/video-request?sort=${sort}`);
+    const res = await fetch(
+      `${BASE_API_URL}/video-request?sort=${sortBy}&query=${encodeURIComponent(
+        query
+      )}`
+    );
 
     const reqs = await res.json();
+
     console.log(reqs);
+
     return reqs;
   } catch (error) {
     console.error(error);
@@ -127,8 +157,8 @@ function renderVideoRequests(reqs) {
   listOfRequestsContainer.appendChild(fragment);
 }
 
-async function showVideoRequests(sort) {
-  const reqs = await getVideoRequests(sort);
+async function showVideoRequests() {
+  const reqs = await getVideoRequests();
   renderVideoRequests(reqs);
 }
 
