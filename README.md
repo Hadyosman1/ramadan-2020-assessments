@@ -16,8 +16,8 @@ In this repo you will find some given express server configured to make some bas
    - [x] Vote up and down on each request. (API: PUT -> `/video-request/vote`)
    - [x] Sorting options `new first` the default one, and `top voted first`.
    - [x] Search box to search for video requests.
-   - [ ] Client-side validation for the fields with * as required and for the email field, topic title should be max 100 length.
-   - [ ] Add signup/login form with email.
+   - [x] Client-side validation for the fields with \* as required and for the email field, topic title should be max 100 length.
+   - [x] Add signup/login form with email.
    - [ ] Make votes unique so no one could cheat, using unique user, enhance the voting experience.
    - [ ] Make a super user capabilities, delete, add resolution video, and change status. all are only visible to him.
    - [ ] Add style to the super user capabilities and make filter by request statuses (`NEW`, `PLANNED`, `DONE`).
@@ -27,4 +27,4 @@ In this repo you will find some given express server configured to make some bas
 7. You are **obligated** to write only **pure JavaScript** code without using any external utility or libraries.
 8. You should not write any css code or styling effort as the provided `index.html` file has almost all what you need, but you can use the bootstrap provided classes.
 
-*You can find the final version of the solution on the [final branch](https://github.com/semicolon-academy/ramadan-2020-assessments/tree/final)*
+_You can find the final version of the solution on the [final branch](https://github.com/semicolon-academy/ramadan-2020-assessments/tree/final)_

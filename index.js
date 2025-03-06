@@ -7,10 +7,23 @@ const videoRequestFormSubmitButton = videoRequestForm.querySelector(
 const listOfRequestsContainer = document.getElementById("listOfRequests");
 const sortButtons = document.querySelectorAll(".sort-btn");
 const searchInput = document.getElementById("search-input");
+const appContentContainer = document.getElementById("app-content");
+const loginForm = document.getElementById("login-form");
 let sortBy = "new";
 let query = "";
+let loggedInUserId = "";
 
 const loadingSpinner = `<div class="spinner-border spinner-border-sm" role="status"></div>`;
+
+function handleLoggedInUser() {
+  if (window.location.search) {
+    const userId = new URLSearchParams(window.location.search).get("id");
+    loggedInUserId = userId;
+    loginForm.classList.add("d-none");
+    appContentContainer.classList.remove("d-none");
+  }
+}
+handleLoggedInUser();
 
 const debounce = (fn, delay) => {
   let timeOut;
@@ -49,13 +62,40 @@ function toggleLoadingSpinner(element) {
   else element.innerHTML += loadingSpinner;
 }
 
+function formValidation(formData) {
+  const topic_title = formData.get("topic_title");
+  const topic_details = formData.get("topic_details");
+
+  if (!topic_title.trim() || topic_title.trim().length > 100) {
+    document.querySelector('[name="topic_title"]').classList.add("is-invalid");
+  }
+
+  if (!topic_details.trim() || topic_details.trim().length > 100) {
+    document
+      .querySelector('[name="topic_details"]')
+      .classList.add("is-invalid");
+  }
+
+  const allInvalidElms = videoRequestForm.querySelectorAll(".is-invalid");
+
+  if (allInvalidElms.length) {
+    allInvalidElms.forEach((el) => {
+      el.addEventListener("input", () => el.classList.remove("is-invalid"));
+    });
+    return false;
+  }
+
+  return true;
+}
+
 videoRequestForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   const formData = new FormData(videoRequestForm);
-  const formDataObject = Object.fromEntries(formData.entries());
   const allFormElements = videoRequestForm.querySelectorAll("*");
 
-  // TODO: Add form validation
+  if (!formValidation(formData)) return;
+
+  formData.append("user_id", loggedInUserId);
 
   toggleLoadingSpinner(videoRequestFormSubmitButton);
   allFormElements.forEach((e) => e.setAttribute("disabled", "true"));
