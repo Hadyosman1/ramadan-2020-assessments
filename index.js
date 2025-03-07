@@ -1,4 +1,5 @@
 const BASE_API_URL = "http://localhost:7777";
+const ADMIN_USER_ID = "29092002";
 
 const videoRequestForm = document.getElementById("videoRequestForm");
 const videoRequestFormSubmitButton = videoRequestForm.querySelector(
@@ -9,16 +10,26 @@ const sortButtons = document.querySelectorAll(".sort-btn");
 const searchInput = document.getElementById("search-input");
 const appContentContainer = document.getElementById("app-content");
 const loginForm = document.getElementById("login-form");
-let sortBy = "new";
-let query = "";
-let loggedInUserId = "";
+const normalUserContentWrapper = document.querySelector(".normal-user-content");
+const state = {
+  sortBy: "new",
+  query: "",
+  loggedInUserId: "",
+  isAdmin: false,
+};
 
 const loadingSpinner = `<div class="spinner-border spinner-border-sm" role="status"></div>`;
 
 function handleLoggedInUser() {
   if (window.location.search) {
-    const userId = new URLSearchParams(window.location.search).get("id");
-    loggedInUserId = userId;
+    state.loggedInUserId = new URLSearchParams(window.location.search).get(
+      "id"
+    );
+
+    if (state.loggedInUserId === ADMIN_USER_ID) {
+      state.isAdmin = true;
+      normalUserContentWrapper.classList.add("d-none");
+    }
     loginForm.classList.add("d-none");
     appContentContainer.classList.remove("d-none");
   }
@@ -38,7 +49,7 @@ searchInput.addEventListener(
   "input",
   debounce(async (e) => {
     const searchVal = e.target.value;
-    query = searchVal;
+    state.query = searchVal;
     listOfRequestsContainer.innerHTML = "";
     await showVideoRequests();
   }, 500)
@@ -50,7 +61,7 @@ sortButtons.forEach((btn) => {
     e.currentTarget.classList.add("active");
     listOfRequestsContainer.innerHTML = "";
     const sortVal = e.currentTarget.dataset.sort;
-    sortBy = sortVal;
+    state.sortBy = sortVal;
     await showVideoRequests();
   });
 });
@@ -95,7 +106,7 @@ videoRequestForm.addEventListener("submit", async (e) => {
 
   if (!formValidation(formData)) return;
 
-  formData.append("user_id", loggedInUserId);
+  formData.append("user_id", state.loggedInUserId);
 
   toggleLoadingSpinner(videoRequestFormSubmitButton);
   allFormElements.forEach((e) => e.setAttribute("disabled", "true"));
@@ -124,9 +135,9 @@ videoRequestForm.addEventListener("submit", async (e) => {
 async function getVideoRequests() {
   try {
     const res = await fetch(
-      `${BASE_API_URL}/video-request?sort=${sortBy}&query=${encodeURIComponent(
-        query
-      )}`
+      `${BASE_API_URL}/video-request?sort=${
+        state.sortBy
+      }&query=${encodeURIComponent(state.query)}`
     );
 
     const reqs = await res.json();
@@ -142,14 +153,47 @@ async function getVideoRequests() {
 
 function getSingleVideoRequestElm(vidReqInfo) {
   const vidReqWrapperElm = document.createElement("div");
-  const userVote = vidReqInfo.votes.ups.includes(loggedInUserId)
+  const userVote = vidReqInfo.votes.ups.includes(state.loggedInUserId)
     ? "up"
-    : vidReqInfo.votes.downs.includes(loggedInUserId)
+    : vidReqInfo.votes.downs.includes(state.loggedInUserId)
     ? "down"
     : "";
 
   vidReqWrapperElm.innerHTML = `
       <div class="card mb-3">
+          ${
+            state.isAdmin
+              ? `<div class="card-header d-flex justify-content-between">
+                <select id="admin_change_status_${
+                  vidReqInfo._id
+                }" class="custom-select w-25">
+                  <option value="new">New</option>
+                  <option value="planned">Planned</option>
+                  <option value="done">Done</option>
+                </select>
+                <div id="admin_video_res_container_${
+                  vidReqInfo._id
+                }" class="input-group ${
+                  vidReqInfo.status !== "done" && "d-none"
+                } ml-2 mr-5">
+                  <input id="admin_video_res_${
+                    vidReqInfo._id
+                  }" type="text" class="form-control" placeholder="Paste here youtube video id" />
+                  <div class="input-group-append">
+                    <button id="admin_save_video_res_${
+                      vidReqInfo._id
+                    }" class="btn btn-outline-secondary" type="button">
+                      Save
+                    </button>
+                  </div>
+                </div>
+                <button id="admin_delete_video_req_${
+                  vidReqInfo._id
+                }" type="button" class="btn btn-danger">Delete</button>
+              </div>`
+              : ""
+          }
+
           <div class="card-body d-flex justify-content-between flex-row">
             <div class="d-flex flex-column">
               <h3>${vidReqInfo.topic_title}</h3>
@@ -162,18 +206,22 @@ function getSingleVideoRequestElm(vidReqInfo) {
               }
             </div>
             <div class="d-flex flex-column text-center">
-              <button onclick="voteUp(this)" data-id="${
-                vidReqInfo._id
-              }" class="btn vote-up btn-link"
-               style="opacity:${userVote === "down" ? "0.5" : "1"}"
+              <button onclick="voteUp(this)" ${
+                state.isAdmin ? "disabled" : ""
+              } data-id="${vidReqInfo._id}" class="btn vote-up btn-link"
+               style="opacity:${
+                 userVote === "down" || state.isAdmin ? "0.5" : "1"
+               }"
               >🔺</button>
               <h3 data-id="${vidReqInfo._id}">
                 ${vidReqInfo.votes.ups.length - vidReqInfo.votes.downs.length}
               </h3>
-              <button onclick="voteDown(this)" data-id="${
-                vidReqInfo._id
-              }"  class="btn vote-down btn-link"
-               style="opacity:${userVote === "up" ? "0.5" : "1"}"
+              <button onclick="voteDown(this)" ${
+                state.isAdmin ? "disabled" : ""
+              } data-id="${vidReqInfo._id}"  class="btn vote-down btn-link"
+               style="opacity:${
+                 userVote === "up" || state.isAdmin ? "0.5" : "1"
+               }"
               >🔻</button>
             </div>
           </div>
@@ -202,6 +250,7 @@ function renderVideoRequests(reqs) {
 
   reqs.forEach((vidReq) => {
     fragment.appendChild(getSingleVideoRequestElm(vidReq));
+    if (state.isAdmin) addAdminActions(vidReq, fragment);
   });
 
   listOfRequestsContainer.appendChild(fragment);
@@ -224,13 +273,11 @@ async function sendVoteRequest(vidReqId, vote_type) {
       body: JSON.stringify({
         id: vidReqId,
         vote_type,
-        user_id: loggedInUserId,
+        user_id: state.loggedInUserId,
       }),
     });
 
     const updatedVotes = await res.json();
-
-    // console.log(updatedVotes);
 
     return updatedVotes;
   } catch (error) {
@@ -246,7 +293,7 @@ async function voteUp(el) {
 
   const voteDownBtn = el.parentElement.querySelector(".vote-down");
 
-  if (updatedVotes.ups.includes(loggedInUserId)) {
+  if (updatedVotes.ups.includes(state.loggedInUserId)) {
     el.style.opacity = "1";
     voteDownBtn.style.opacity = "0.5";
   } else {
@@ -264,7 +311,7 @@ async function voteDown(el) {
 
   const voteUpBtn = el.parentElement.querySelector(".vote-up");
 
-  if (updatedVotes.downs.includes(loggedInUserId)) {
+  if (updatedVotes.downs.includes(state.loggedInUserId)) {
     el.style.opacity = "1";
     voteUpBtn.style.opacity = "0.5";
   } else {
@@ -273,4 +320,91 @@ async function voteDown(el) {
 
   countContainerElm.innerHTML =
     updatedVotes.ups.length - updatedVotes.downs.length;
+}
+
+const adminActions = {
+  deleteVidReq: async (e) => {
+    const id = e.currentTarget.id.split("_").at(-1);
+
+    const isSure = confirm(
+      "Are you sure you want to delete this video request?"
+    );
+
+    if (!isSure) return;
+
+    const res = await fetch(`${BASE_API_URL}/video-request`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ id }),
+    }).catch((err) => console.error(err));
+
+    if (res.ok) {
+      e.target.closest(".card").remove();
+    }
+  },
+  updateVidReq: async (id, status, resVideo) => {
+    await fetch(`${BASE_API_URL}/video-request`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ id, status, resVideo }),
+    }).catch((err) => console.error(err));
+
+    listOfRequestsContainer.innerHTML = "";
+    showVideoRequests();
+  },
+};
+
+function addAdminActions(vidReq, fragment) {
+  const videoResInput = fragment.getElementById(
+    `admin_video_res_${vidReq._id}`
+  );
+  const adminVidResContainer = fragment.getElementById(
+    `admin_video_res_container_${vidReq._id}`
+  );
+  const changeStatusSelect = fragment.getElementById(
+    `admin_change_status_${vidReq._id}`
+  );
+
+  changeStatusSelect
+    .querySelector(`option[value="${vidReq.status}"]`)
+    .setAttribute("selected", "");
+  videoResInput.value = vidReq.video_ref.link;
+
+  changeStatusSelect.addEventListener("change", async (e) => {
+    const id = e.currentTarget.id.split("_").at(-1);
+    const status = e.currentTarget.value;
+
+    if (status === "done")
+      return adminVidResContainer.classList.remove("d-none");
+
+    adminVidResContainer.classList.add("d-none");
+    await adminActions.updateVidReq(id, status, videoResInput.value);
+  });
+
+  fragment
+    .getElementById(`admin_save_video_res_${vidReq._id}`)
+    .addEventListener("click", async (e) => {
+      e.preventDefault();
+      if (!videoResInput.value.trim()) {
+        videoResInput.classList.add("is-invalid");
+        videoResInput.addEventListener("input", () => {
+          videoResInput.classList.remove("is-invalid");
+        });
+        return;
+      }
+
+      await adminActions.updateVidReq(
+        vidReq._id,
+        changeStatusSelect.value,
+        videoResInput.value.trim()
+      );
+    });
+
+  fragment
+    .getElementById(`admin_delete_video_req_${vidReq._id}`)
+    .addEventListener("click", adminActions.deleteVidReq);
 }
