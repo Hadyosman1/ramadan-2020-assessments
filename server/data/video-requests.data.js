@@ -11,13 +11,16 @@ module.exports = {
     return newRequest.save();
   },
 
-  getAllVideoRequests: (top) => {
-    return VideoRequest.find({}).sort({ submit_date: "-1" }).limit(top);
+  getAllVideoRequests: (filter) => {
+    return VideoRequest.find({
+      ...(filter !== "all" ? { status: filter } : {}),
+    }).sort({ submit_date: "-1" });
   },
 
-  searchRequests: (topic) => {
+  searchRequests: (topic, filter) => {
     return VideoRequest.find({
       topic_title: { $regex: topic, $options: "i" },
+      ...(filter !== "all" ? { status: filter } : {}),
     }).sort({ submit_date: "-1" });
   },
 

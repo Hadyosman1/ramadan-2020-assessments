@@ -7,7 +7,6 @@ const UserData = require("./data/user.data");
 const cors = require("cors");
 const mongoose = require("./models/mongo.config");
 const multer = require("multer");
-const userData = require("./data/user.data");
 
 const upload = multer();
 
@@ -28,14 +27,14 @@ app.post("/video-request", upload.none(), async (req, res, next) => {
 });
 
 app.get("/video-request", async (req, res, next) => {
-  const { sort = "new", query = "" } = req.query;
+  const { sort = "new", query = "", filter = "all" } = req.query;
 
   let data;
 
   if (query && query.trim()) {
-    data = await VideoRequestData.searchRequests(query);
+    data = await VideoRequestData.searchRequests(query, filter);
   } else {
-    data = await VideoRequestData.getAllVideoRequests();
+    data = await VideoRequestData.getAllVideoRequests(filter);
   }
 
   if (sort === "top_voted") {

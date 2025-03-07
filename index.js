@@ -11,14 +11,31 @@ const searchInput = document.getElementById("search-input");
 const appContentContainer = document.getElementById("app-content");
 const loginForm = document.getElementById("login-form");
 const normalUserContentWrapper = document.querySelector(".normal-user-content");
+const filterInputs = document.querySelectorAll(
+  "#filter-container input[type=radio]"
+);
+console.log(filterInputs);
 const state = {
   sortBy: "new",
   query: "",
   loggedInUserId: "",
+  filter: "all",
   isAdmin: false,
 };
 
 const loadingSpinner = `<div class="spinner-border spinner-border-sm" role="status"></div>`;
+
+filterInputs.forEach((input) => {
+  input.addEventListener("change", (e) => {
+    filterInputs.forEach((el) =>
+      el.closest("label").classList.remove("active")
+    );
+    state.filter = e.target.value;
+    e.target.closest("label").classList.add("active");
+    listOfRequestsContainer.innerHTML = "";
+    showVideoRequests();
+  });
+});
 
 function handleLoggedInUser() {
   if (window.location.search) {
@@ -137,7 +154,7 @@ async function getVideoRequests() {
     const res = await fetch(
       `${BASE_API_URL}/video-request?sort=${
         state.sortBy
-      }&query=${encodeURIComponent(state.query)}`
+      }&query=${encodeURIComponent(state.query)}&filter=${state.filter}`
     );
 
     const reqs = await res.json();
@@ -205,29 +222,58 @@ function getSingleVideoRequestElm(vidReqInfo) {
               </p>`
               }
             </div>
+            ${
+              vidReqInfo.video_ref.link && vidReqInfo.status === "done"
+                ? `<div class="ml-auto mr-3">
+              <iframe width="240" height="135" src="https://www.youtube.com/embed/${vidReqInfo.video_ref.link}" allowfullscreen frameborder="0"></iframe>
+            </div>`
+                : ""
+            }
             <div class="d-flex flex-column text-center">
               <button onclick="voteUp(this)" ${
-                state.isAdmin ? "disabled" : ""
+                state.isAdmin || vidReqInfo.status === "done" ? "disabled" : ""
               } data-id="${vidReqInfo._id}" class="btn vote-up btn-link"
                style="opacity:${
-                 userVote === "down" || state.isAdmin ? "0.5" : "1"
+                 userVote === "down" ||
+                 state.isAdmin ||
+                 vidReqInfo.status === "done"
+                   ? "0.5"
+                   : "1"
                }"
               >🔺</button>
               <h3 data-id="${vidReqInfo._id}">
                 ${vidReqInfo.votes.ups.length - vidReqInfo.votes.downs.length}
               </h3>
               <button onclick="voteDown(this)" ${
-                state.isAdmin ? "disabled" : ""
+                state.isAdmin || vidReqInfo.status === "done" ? "disabled" : ""
               } data-id="${vidReqInfo._id}"  class="btn vote-down btn-link"
                style="opacity:${
-                 userVote === "up" || state.isAdmin ? "0.5" : "1"
+                 userVote === "up" ||
+                 state.isAdmin ||
+                 vidReqInfo.status === "done"
+                   ? "0.5"
+                   : "1"
                }"
               >🔻</button>
             </div>
           </div>
           <div class="card-footer d-flex flex-row justify-content-between">
-            <div>
-              <span class="text-info">${vidReqInfo.status.toUpperCase()}</span>
+            <div  class="${
+              vidReqInfo.status === "done"
+                ? "text-success font-bold"
+                : vidReqInfo.status === "planned"
+                ? "text-primary"
+                : "text-info"
+            }">
+              <span>${vidReqInfo.status.toUpperCase()} 
+                ${
+                  vidReqInfo.status === "done"
+                    ? `<strong> on ${new Date(
+                        vidReqInfo.video_ref.date
+                      ).toDateString()}</strong>`
+                    : ""
+                }
+             </span>
               &bullet; added by <strong>${vidReqInfo.author_name}</strong> on
               <strong>${new Date(
                 vidReqInfo.submit_date

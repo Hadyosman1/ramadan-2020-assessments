@@ -10,6 +10,12 @@
       integrity="sha384-xOolHFLEh07PJGoPkLv1IbcEPTNtaed2xpHsD9ESMhqIYd0nLMwNLD69Npy4HI+N"
       crossorigin="anonymous"
     />
+    <style>
+      button:disabled {
+        pointer-events: auto !important;
+        cursor: not-allowed;
+      }
+    </style>
   </head>
   <body>
     <div class="container">
@@ -149,6 +155,71 @@
               Top voted
             </button>
           </div>
+
+          <div
+            id="filter-container"
+            class="btn-group btn-group-sm btn-group-toggle"
+            data-toggle="buttons"
+          >
+            <label
+              tabindex="0"
+              class="btn btn-primary active"
+              for="filter_by_all_input"
+              id="filter_by_all"
+            >
+              <input
+                type="radio"
+                value="all"
+                name="options"
+                id="filter_by_all_input"
+                checked
+              />
+              All
+            </label>
+            <label
+              tabindex="0"
+              class="btn btn-primary"
+              for="filter_by_new_input"
+              id="filter_by_new"
+            >
+              <input
+                type="radio"
+                value="new"
+                name="options"
+                id="filter_by_new_input"
+              />
+              New
+            </label>
+            <label
+              tabindex="0"
+              class="btn btn-primary"
+              for="filter_by_planned_input"
+              id="filter_by_planned"
+            >
+              <input
+                type="radio"
+                value="planned"
+                name="options"
+                id="filter_by_planned_input"
+              />
+              Planned
+            </label>
+            <label
+              tabindex="0"
+              class="btn btn-primary"
+              for="filter_by_done_input"
+              id="filter_by_done"
+            >
+              <input
+                type="radio"
+                value="done"
+                name="options"
+                id="filter_by_done_input"
+              />
+              Done
+            </label>
+          </div>
+
           <div>
             <input
               type="search"
