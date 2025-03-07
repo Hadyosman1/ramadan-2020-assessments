@@ -39,7 +39,11 @@ app.get("/video-request", async (req, res, next) => {
 
   if (sort === "top_voted") {
     data.sort((a, b) => {
-      return b.votes.ups - b.votes.downs - (a.votes.ups - a.votes.downs);
+      return (
+        b.votes.ups.length -
+        b.votes.downs.length -
+        (a.votes.ups.length - a.votes.downs.length)
+      );
     });
   }
 

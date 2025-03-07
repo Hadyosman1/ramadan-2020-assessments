@@ -138,8 +138,10 @@
         </div>
 
         <h1 class="my-4">List of requested videos</h1>
-        <div class="d-flex mb-3 justify-content-between align-items-center">
-          <div class="btn-group btn-group-sm" role="group">
+        <div
+          class="d-flex mb-3 flex-wrap justify-content-between align-items-center"
+        >
+          <div class="btn-group col-12 mb-2 col-md-3 btn-group-sm" role="group">
             <button
               data-sort="new"
               type="button"
@@ -158,7 +160,7 @@
 
           <div
             id="filter-container"
-            class="btn-group btn-group-sm btn-group-toggle"
+            class="btn-group btn-group-sm col-md-4 mb-2 col-12 btn-group-toggle"
             data-toggle="buttons"
           >
             <label
@@ -220,7 +222,7 @@
             </label>
           </div>
 
-          <div>
+          <div class="col-12 mb-2 col-md-3">
             <input
               type="search"
               class="form-control form-control-sm"
@@ -233,6 +235,6 @@
       </div>
     </div>
 
-    <script defer src="./index.js"></script>
+    <script defer src="./index.js" type="module"></script>
   </body>
 </html>
