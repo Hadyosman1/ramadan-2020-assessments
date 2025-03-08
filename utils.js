@@ -1,9 +1,14 @@
 import { listOfRequestsContainer, videoRequestForm } from "./selectors.js";
 import { state } from "./index.js";
-import { ADMIN_USER_ID, BASE_API_URL } from "./constants.js";
-import { getVideoRequests, sendVoteRequest } from "./apis.js";
-import { getSingleVideoRequestElm } from "./singleVideoRequestComponent.js";
-import { deleteVidReq, updateVidReq } from "./apis.js";
+import { ADMIN_USER_ID } from "./constants.js";
+import singleVideoRequestComponent from "./singleVideoRequestComponent.js";
+import {
+  createVideoRequest,
+  deleteVidReq,
+  getVideoRequests,
+  updateVidReq,
+  updateVote,
+} from "./services.js";
 import { formValidation } from "./validations.js";
 
 export const debounce = (fn, delay) => {
@@ -21,7 +26,6 @@ export function getLoadingSpinner() {
 
 export function toggleLoadingSpinner(element) {
   const existingLoadingSpinner = element.querySelector(".spinner-border");
-
   if (existingLoadingSpinner) existingLoadingSpinner.remove();
   else element.innerHTML += getLoadingSpinner();
 }
@@ -63,7 +67,7 @@ export function addAdminActions(vidReq, fragment) {
 
   videoResInput.value = vidReq.video_ref.link;
 
-  changeStatusSelect.addEventListener("change", async (e) => {
+  changeStatusSelect.addEventListener("change", (e) => {
     const id = e.currentTarget.id.split("_").at(-1);
     const status = e.currentTarget.value;
 
@@ -72,12 +76,12 @@ export function addAdminActions(vidReq, fragment) {
     }
 
     adminVidResContainer.classList.add("d-none");
-    await updateVidReq(id, status, videoResInput.value);
+    updateVidReq(id, status, videoResInput.value);
   });
 
   fragment
     .getElementById(`admin_save_video_res_${vidReq._id}`)
-    .addEventListener("click", async (e) => {
+    .addEventListener("click", (e) => {
       e.preventDefault();
       if (!videoResInput.value.trim()) {
         videoResInput.classList.add("is-invalid");
@@ -87,7 +91,7 @@ export function addAdminActions(vidReq, fragment) {
         return;
       }
 
-      await updateVidReq(
+      updateVidReq(
         vidReq._id,
         changeStatusSelect.value,
         videoResInput.value.trim()
@@ -101,11 +105,10 @@ export function addAdminActions(vidReq, fragment) {
 
 export async function renderVideoRequests() {
   const reqs = await getVideoRequests();
-
   let fragment = document.createDocumentFragment();
 
   reqs.forEach((vidReq) => {
-    fragment.appendChild(getSingleVideoRequestElm(vidReq));
+    fragment.appendChild(singleVideoRequestComponent(vidReq));
     if (state.isAdmin) addAdminActions(vidReq, fragment);
   });
 
@@ -117,9 +120,9 @@ export function addSearchEventListener(delay = 500) {
   const searchInput = document.getElementById("search-input");
   searchInput.addEventListener(
     "input",
-    debounce(async (e) => {
+    debounce((e) => {
       state.query = e.target.value;
-      await renderVideoRequests();
+      renderVideoRequests();
     }, delay)
   );
 }
@@ -130,14 +133,14 @@ export function addFiltersEventListeners() {
   );
 
   filterInputs.forEach((input) => {
-    input.addEventListener("change", async (e) => {
+    input.addEventListener("change", (e) => {
       filterInputs.forEach((el) =>
         el.closest("label").classList.remove("active")
       );
       state.filter = e.target.value;
       e.target.closest("label").classList.add("active");
 
-      await renderVideoRequests();
+      renderVideoRequests();
     });
   });
 }
@@ -146,11 +149,11 @@ export function addSortEventListeners() {
   const sortButtons = document.querySelectorAll(".sort-btn");
 
   sortButtons.forEach((btn) => {
-    btn.addEventListener("click", async (e) => {
+    btn.addEventListener("click", (e) => {
       sortButtons.forEach((btn) => btn.classList.remove("active"));
       e.currentTarget.classList.add("active");
       state.sortBy = e.currentTarget.dataset.sort;
-      await renderVideoRequests();
+      renderVideoRequests();
     });
   });
 }
@@ -170,7 +173,7 @@ export function addVoteButtonsEventListeners() {
       `vote_${dir === "up" ? "down" : "up"}_${vidReqId}`
     );
 
-    const updatedVotes = await sendVoteRequest(vidReqId, voteDir);
+    const updatedVotes = await updateVote(vidReqId, voteDir);
 
     countContainerElm.innerHTML =
       updatedVotes.ups.length - updatedVotes.downs.length;
@@ -189,7 +192,7 @@ export function addVoteButtonsEventListeners() {
 }
 
 export function handleFormSubmission() {
-  videoRequestForm.addEventListener("submit", async (e) => {
+  videoRequestForm.addEventListener("submit", (e) => {
     e.preventDefault();
     const formData = new FormData(videoRequestForm);
     const allFormElements = videoRequestForm.querySelectorAll("*");
@@ -205,24 +208,19 @@ export function handleFormSubmission() {
     toggleLoadingSpinner(videoRequestFormSubmitButton);
     allFormElements.forEach((e) => e.setAttribute("disabled", "true"));
 
-    try {
-      const res = await fetch(`${BASE_API_URL}/video-request`, {
-        method: "POST",
-        body: formData,
-      });
-
-      const vidReq = await res.json();
-
-      if (res.ok) {
+    createVideoRequest(formData)
+      .then((res) => res.json())
+      .then((vidReq) => {
         videoRequestForm.reset();
-        listOfRequestsContainer.prepend(getSingleVideoRequestElm(vidReq));
-      }
-    } catch (error) {
-      console.error(error);
-      alert("Something went wrong:", error);
-    } finally {
-      toggleLoadingSpinner(videoRequestFormSubmitButton);
-      allFormElements.forEach((e) => e.removeAttribute("disabled"));
-    }
+        listOfRequestsContainer.prepend(singleVideoRequestComponent(vidReq));
+      })
+      .catch((error) => {
+        console.error(error);
+        alert("Something went wrong:", error);
+      })
+      .finally(() => {
+        toggleLoadingSpinner(videoRequestFormSubmitButton);
+        allFormElements.forEach((e) => e.removeAttribute("disabled"));
+      });
   });
 }
